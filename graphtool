@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# change python path suited to your environment
+PYTHON=${HOME}/envs/py3.12/bin/python
+
+BASEDIR=$(dirname "$(readlink -f "$0" || realpath "$0" || echo "$0")")
+
+$PYTHON $BASEDIR/graphtool.py $*
