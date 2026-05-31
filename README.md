@@ -16,9 +16,18 @@ pip install msal requests
 初回実行時、またはトークンの期限切れ時にデバイスコード認証が発生します。  
 表示された URL にアクセスしてコードを入力してください。トークンは `token_cache.json` にキャッシュされます。
 
-```bash
-python graphtool.py login
 ```
+% python graphtool.py login
+To sign in, use a web browser to open the page https://login.microsoft.com/device and enter the code OW6QPKSPZ to authenticate.
+```
+
+ブラウザから URLを開いて、code (この例では OW6QPKSPZ) を入力します。  
+認証に成功すると、コンソールに以下のようなメッセージが表示されます。
+
+```
+Token cached successfully.
+```
+
 
 ## コマンド一覧
 
