@@ -60,7 +60,20 @@ python graphtool.py tree --format json
 python graphtool.py tree --format csv
 python graphtool.py tree --format csv > org_tree.csv
 python graphtool.py tree --save
+python graphtool.py tree --depth 2
+python graphtool.py tree --managers-only
 ```
+
+| オプション | 説明 |
+|---|---|
+| `--depth N` | 何階層まで下がるかを指定（デフォルト: 無制限） |
+| `--managers-only` | 直属の部下を持つノード（マネージャー）のみ表示 |
+| `--format text\|json\|csv` | 出力形式 |
+| `--full` | JSON 出力時に全フィールドを含める |
+| `--save` | 結果を JSON ファイルに保存 |
+
+`--depth 0` は指定ユーザーのみ、`--depth 1` は直属の部下まで、省略時は全階層を取得します。  
+`--managers-only` はリーフノード（部下のいないメンバー）を除外し、管理職の階層構造だけを表示します。
 
 CSV 出力のカラム: `displayName`, `userPrincipalName`, `jobTitle`, `managerUPN`（`managerUPN` が空の行がツリーのルート）
 
@@ -150,7 +163,7 @@ pip install mcp
 |---|---|---|
 | `get_user` | `user_id` (省略時 `"me"`) | ユーザー情報を取得 |
 | `get_manager` | `user_id` (省略時 `"me"`) | マネージャーを取得 |
-| `get_org_tree` | `user_id` (省略時 `"me"`) | 組織ツリーを JSON で取得 |
+| `get_org_tree` | `user_id` (省略時 `"me"`), `max_depth` (省略時 無制限), `managers_only` (省略時 `false`) | 組織ツリーを JSON で取得 |
 | `search_users` | `query` | 名前・メール・UPN の部分一致でユーザー検索 |
 | `search_groups` | `query` | 名前・メールの部分一致でグループ検索 |
 | `get_group_members` | `group_ref`, `expand` (省略時 `false`) | グループメンバーを CSV で取得。`expand=true` でネストグループを再帰展開 |

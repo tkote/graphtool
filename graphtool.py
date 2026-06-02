@@ -191,12 +191,15 @@ def print_group(group):
     print(f"  Type: {kind}")
 
 
-def build_tree(token, user_id):
+def build_tree(token, user_id, max_depth=None, _depth=0):
     user = get_user(token, user_id)
     display_name = user.get("displayName", user_id)
     print(f"Fetching: {display_name}", file=sys.stderr)
-    reports = get_direct_reports(token, user.get("id", user_id))
-    user["directReports"] = [build_tree(token, r["id"]) for r in reports]
+    if max_depth is not None and _depth >= max_depth:
+        user["directReports"] = []
+    else:
+        reports = get_direct_reports(token, user.get("id", user_id))
+        user["directReports"] = [build_tree(token, r["id"], max_depth, _depth + 1) for r in reports]
     return user
 
 
@@ -245,6 +248,11 @@ def print_tree(node, indent=0):
         print_tree(report, indent + 1)
 
 
+def filter_managers_only(node):
+    filtered = [filter_managers_only(r) for r in node.get("directReports", []) if r.get("directReports")]
+    return {**node, "directReports": filtered}
+
+
 def add_common_args(p):
     p.add_argument("user_id", nargs="?", default="me")
     p.add_argument("--format", choices=["text", "json"], default="text", dest="fmt")
@@ -263,6 +271,8 @@ p_tree.add_argument("user_id", nargs="?", default="me")
 p_tree.add_argument("--format", choices=["text", "json", "csv"], default="text", dest="fmt")
 p_tree.add_argument("--full", action="store_true", help="include all fields in JSON output")
 p_tree.add_argument("--save", action="store_true", help="save result to a JSON file")
+p_tree.add_argument("--depth", type=int, default=None, metavar="N", help="max levels to descend (default: unlimited)")
+p_tree.add_argument("--managers-only", action="store_true", help="show only nodes that have direct reports")
 p_search = subparsers.add_parser("search", help="search users by name or email")
 p_search.add_argument("query", help="partial name or email to search")
 p_search.add_argument("--format", choices=["text", "json"], default="text", dest="fmt")
@@ -312,7 +322,9 @@ elif args.command == "manager":
 
 elif args.command == "tree":
     print(f"\nFetching org tree for '{args.user_id}'...\n", file=sys.stderr)
-    data = build_tree(token, args.user_id)
+    data = build_tree(token, args.user_id, max_depth=args.depth)
+    if args.managers_only:
+        data = filter_managers_only(data)
     print("\n--- Org Tree ---", file=sys.stderr)
     if args.fmt == "json":
         print(json.dumps(data if args.full else slim_tree(data), ensure_ascii=False, indent=2))

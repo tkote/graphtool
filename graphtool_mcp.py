@@ -92,10 +92,13 @@ def _get_direct_reports(token, user_id):
     return members
 
 
-def _build_tree(token, user_id):
+def _build_tree(token, user_id, max_depth=None, _depth=0):
     user = _get_user(token, user_id)
-    reports = _get_direct_reports(token, user.get("id", user_id))
-    user["directReports"] = [_build_tree(token, r["id"]) for r in reports]
+    if max_depth is not None and _depth >= max_depth:
+        user["directReports"] = []
+    else:
+        reports = _get_direct_reports(token, user.get("id", user_id))
+        user["directReports"] = [_build_tree(token, r["id"], max_depth, _depth + 1) for r in reports]
     return user
 
 
@@ -105,6 +108,11 @@ def _slim_tree(node):
         "displayName": node.get("displayName", ""),
         "directReports": [_slim_tree(r) for r in node.get("directReports", [])],
     }
+
+
+def _filter_managers_only(node):
+    filtered = [_filter_managers_only(r) for r in node.get("directReports", []) if r.get("directReports")]
+    return {**node, "directReports": filtered}
 
 
 def _search_users(token, query):
@@ -238,10 +246,17 @@ def get_manager(user_id: str = "me") -> str:
 
 
 @mcp.tool()
-def get_org_tree(user_id: str = "me") -> str:
-    """Get the org tree rooted at the given user as JSON. Pass a UPN, object ID, or 'me'."""
+def get_org_tree(user_id: str = "me", max_depth: int | None = None, managers_only: bool = False) -> str:
+    """Get the org tree rooted at the given user as JSON.
+
+    user_id: UPN, object ID, or 'me'.
+    max_depth: how many levels to descend (None = unlimited).
+    managers_only: if True, exclude leaf nodes (users without direct reports).
+    """
     token = get_token()
-    data = _build_tree(token, user_id)
+    data = _build_tree(token, user_id, max_depth=max_depth)
+    if managers_only:
+        data = _filter_managers_only(data)
     return json.dumps(_slim_tree(data), ensure_ascii=False, indent=2)
 
 
